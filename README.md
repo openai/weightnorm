@@ -16,7 +16,7 @@ Tim Salimans, and Diederik P. Kingma.
 If you find this code useful please cite us in your work:
 
 ```
-@inproceedings{Salimans2016PixeCNN,
+@inproceedings{Salimans2016WeightNorm,
   title={Weight Normalization: A Simple Reparameterization to Accelerate Training of Deep Neural Networks},
   author={Tim Salimans and Diederik P. Kingma},
   booktitle={Neural Information Processing Systems 2016},

@@ -1,10 +1,6 @@
-from __future__ import absolute_import
 from keras import backend as K
-from keras.utils.generic_utils import get_from_module
 from keras.optimizers import SGD,Adam
 import tensorflow as tf
-from warnings import warn
-import numpy as np
 
 # adapted from keras.optimizers.SGD
 class SGDWithWeightnorm(SGD):

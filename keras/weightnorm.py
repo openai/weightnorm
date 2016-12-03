@@ -181,10 +181,10 @@ def add_weightnorm_param_updates(updates, new_V_param, new_g_param, W, V_scaler)
 # data based initialization for a given Keras model
 def data_based_init(model, input):
 
-    # input can be feed_dict, numpy array, or list of numpy arrays
+    # input can be dict, numpy array, or list of numpy arrays
     if type(input) is dict:
         feed_dict = input
-    if type(input) is list:
+    elif type(input) is list:
         feed_dict = {tf_inp: np_inp for tf_inp,np_inp in zip(model.inputs,input)}
     else:
         feed_dict = {model.inputs[0]: input}

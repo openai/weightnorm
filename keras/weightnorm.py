@@ -9,7 +9,7 @@ class SGDWithWeightnorm(SGD):
         self.updates = []
 
         lr = self.lr
-        if self.inital_decay > 0:
+        if self.initial_decay > 0:
             lr *= (1. / (1. + self.decay * self.iterations))
             self.updates .append(K.update_add(self.iterations, 1))
 
@@ -78,7 +78,7 @@ class AdamWithWeightnorm(Adam):
         self.updates = [K.update_add(self.iterations, 1)]
 
         lr = self.lr
-        if self.inital_decay > 0:
+        if self.initial_decay > 0:
             lr *= (1. / (1. + self.decay * self.iterations))
 
         t = self.iterations + 1

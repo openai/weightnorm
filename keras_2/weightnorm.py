@@ -4,13 +4,13 @@ import tensorflow as tf
 
 # adapted from keras.optimizers.SGD
 class SGDWithWeightnorm(SGD):
-    def get_updates(self, params, constraints, loss):
+    def get_updates(self, loss, params):
         grads = self.get_gradients(loss, params)
         self.updates = []
 
         lr = self.lr
         if self.initial_decay > 0:
-            lr *= (1. / (1. + self.decay * self.iterations))
+            lr *= (1. / (1. + self.decay * K.cast(self.iterations, K.floatx())))
             self.updates .append(K.update_add(self.iterations, 1))
 
         # momentum
@@ -47,9 +47,8 @@ class SGDWithWeightnorm(SGD):
                     new_V_param = V + v_v
 
                 # if there are constraints we apply them to V, not W
-                if p in constraints:
-                    c = constraints[p]
-                    new_V_param = c(new_V_param)
+                if getattr(p, 'constraint', None) is not None:
+                    new_V_param = p.constraint(new_V_param)
 
                 # wn param updates --> W updates
                 add_weightnorm_param_updates(self.updates, new_V_param, new_g_param, p, V_scaler)
@@ -64,24 +63,23 @@ class SGDWithWeightnorm(SGD):
                     new_p = p + v
 
                 # apply constraints
-                if p in constraints:
-                    c = constraints[p]
-                    new_p = c(new_p)
+                if getattr(p, 'constraint', None) is not None:
+                    new_p = p.constraint(new_p)
 
                 self.updates.append(K.update(p, new_p))
         return self.updates
 
 # adapted from keras.optimizers.Adam
 class AdamWithWeightnorm(Adam):
-    def get_updates(self, params, constraints, loss):
+    def get_updates(self, loss, params):
         grads = self.get_gradients(loss, params)
         self.updates = [K.update_add(self.iterations, 1)]
 
         lr = self.lr
         if self.initial_decay > 0:
-            lr *= (1. / (1. + self.decay * self.iterations))
+            lr *= (1. / (1. + self.decay * K.cast(self.iterations, K.floatx())))
 
-        t = self.iterations + 1
+        t = K.cast(self.iterations + 1, K.floatx())
         lr_t = lr * K.sqrt(1. - K.pow(self.beta_2, t)) / (1. - K.pow(self.beta_1, t))
 
         shapes = [K.get_variable_shape(p) for p in params]
@@ -119,9 +117,8 @@ class AdamWithWeightnorm(Adam):
                 self.updates.append(K.update(v, v_t))
 
                 # if there are constraints we apply them to V, not W
-                if p in constraints:
-                    c = constraints[p]
-                    new_V_param = c(new_V_param)
+                if getattr(p, 'constraint', None) is not None:
+                    new_V_param = p.constraint(new_V_param)
 
                 # wn param updates --> W updates
                 add_weightnorm_param_updates(self.updates, new_V_param, new_g_param, p, V_scaler)
@@ -136,9 +133,8 @@ class AdamWithWeightnorm(Adam):
 
                 new_p = p_t
                 # apply constraints
-                if p in constraints:
-                    c = constraints[p]
-                    new_p = c(new_p)
+                if getattr(p, 'constraint', None) is not None:
+                    new_p = p.constraint(new_p)
                 self.updates.append(K.update(p, new_p))
         return self.updates
 
@@ -196,9 +192,11 @@ def data_based_init(model, input):
     # get all layer name, output, weight, bias tuples
     layer_output_weight_bias = []
     for l in model.layers:
-        if hasattr(l, 'W') and hasattr(l, 'b'):
+        trainable_weights = l.trainable_weights
+        if len(trainable_weights) == 2:
+            W,b = trainable_weights
             assert(l.built)
-            layer_output_weight_bias.append( (l.name,l.get_output_at(0),l.W,l.b) ) # if more than one node, only use the first
+            layer_output_weight_bias.append((l.name,l.get_output_at(0),W,b)) # if more than one node, only use the first
 
     # iterate over our list and do data dependent init
     sess = K.get_session()
